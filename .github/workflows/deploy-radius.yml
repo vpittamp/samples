@@ -1,0 +1,36 @@
+name: Deploy Radius app
+on:
+  push:
+    branches:
+      - main
+env:
+  RADIUS_INSTALL_DIR: ./
+
+jobs:
+  deploy:
+    name: Deploy app
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repo
+      uses: actions/checkout@v4
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v1
+    - name: az Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Configure kubectl context
+      run: az aks get-credentials --name ${CLUSTER} --resource-group ${RESOURCE_GROUP} --subscription ${SUBSCRIPTION_ID}
+    - name: Download rad CLI and rad-bicep
+      run: |
+        wget -q "https://raw.githubusercontent.com/radius-project/radius/main/deploy/install.sh" -O - | /bin/bash
+        ./rad bicep download
+        ./rad --version        
+    - name: Initialize Radius Environment
+      run: |
+        ./rad group create default
+        ./rad workspace create kubernetes default --group default
+        ./rad env create temp
+        ./rad env switch temp        
+    - name: Deploy app
+      run: ./rad deploy ./iac/app.bicep
