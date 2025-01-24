@@ -2,7 +2,7 @@ name: Deploy Radius app
 on:
   push:
     branches:
-      - main
+      - v0.42
 env:
   RADIUS_INSTALL_DIR: ./
 
